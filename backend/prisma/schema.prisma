@@ -1,0 +1,90 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(USER)
+  bookings  Booking[]
+  createdAt DateTime @default(now())
+
+  @@map("users")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model Cinema {
+  id      String   @id @default(cuid())
+  name    String
+  city    String
+  address String
+  screens Screen[]
+  createdAt DateTime @default(now())
+
+  @@map("cinemas")
+}
+
+model Screen {
+  id       String  @id @default(cuid())
+  name     String
+  cinemaId String
+  cinema   Cinema  @relation(fields: [cinemaId], references: [id], onDelete: Cascade)
+  shows    Show[]
+  createdAt DateTime @default(now())
+
+  @@map("screens")
+}
+
+model Movie {
+  id       String @id @default(cuid())
+  title    String
+  duration Int    // in minutes
+  genre    String
+  shows    Show[]
+  createdAt DateTime @default(now())
+
+  @@map("movies")
+}
+
+model Show {
+  id        String    @id @default(cuid())
+  movieId   String
+  screenId  String
+  date      DateTime
+  time      DateTime
+  price     Float
+  movie     Movie     @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  screen    Screen    @relation(fields: [screenId], references: [id], onDelete: Cascade)
+  bookings  Booking[]
+  createdAt DateTime @default(now())
+
+  @@map("shows")
+}
+
+model Booking {
+  id       String   @id @default(cuid())
+  userId   String
+  showId   String
+  seats    Json     // [{"row": 1, "seat": 5}, {"row": 1, "seat": 6}]
+  status   String   @default("CONFIRMED") // CONFIRMED, CANCELLED
+  total    Float
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  show     Show     @relation(fields: [showId], references: [id], onDelete: Cascade)
+  bookedAt DateTime @default(now())
+
+  @@map("bookings")
+}
